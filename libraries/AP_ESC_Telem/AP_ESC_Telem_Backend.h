@@ -1,11 +1,10 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+#include <SRV_Channel/SRV_Channel_config.h>
 
-#if defined(NUM_SERVO_CHANNELS) && NUM_SERVO_CHANNELS == 0
-#define HAL_WITH_ESC_TELEM 0
-#elif !defined(HAL_WITH_ESC_TELEM)
-#define HAL_WITH_ESC_TELEM (HAL_SUPPORT_RCOUT_SERIAL || HAL_MAX_CAN_PROTOCOL_DRIVERS) && !defined(HAL_BUILD_AP_PERIPH)
+#ifndef HAL_WITH_ESC_TELEM
+#define HAL_WITH_ESC_TELEM ((NUM_SERVO_CHANNELS > 0) && ((HAL_SUPPORT_RCOUT_SERIAL || HAL_MAX_CAN_PROTOCOL_DRIVERS) && !defined(HAL_BUILD_AP_PERIPH)))
 #endif
 
 #if HAL_WITH_ESC_TELEM
@@ -41,7 +40,9 @@ public:
         VOLTAGE     = 1 << 2,
         CURRENT     = 1 << 3,
         CONSUMPTION = 1 << 4,
-        USAGE       = 1 << 5
+        USAGE       = 1 << 5,
+        TEMPERATURE_EXTERNAL = 1 << 6,
+        MOTOR_TEMPERATURE_EXTERNAL  = 1 << 7,
     };
 
 

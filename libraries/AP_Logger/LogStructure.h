@@ -537,6 +537,7 @@ struct PACKED log_Rally {
 struct PACKED log_Performance {
     LOG_PACKET_HEADER;
     uint64_t time_us;
+    uint16_t loop_rate;
     uint16_t num_long_running;
     uint16_t num_loops;
     uint32_t max_time;
@@ -727,8 +728,10 @@ struct PACKED log_VER {
 // @Field: TimeUS: Time since system startup
 // @Field: ArmState: true if vehicle is now armed
 // @Field: ArmChecks: arming bitmask at time of arming
+// @FieldBitmaskEnum: ArmChecks: AP_Arming::ArmingChecks
 // @Field: Forced: true if arm/disarm was forced
 // @Field: Method: method used for arming
+// @FieldValueEnum: Method: AP_Arming::Method
 
 // @LoggerMessage: ARSP
 // @Description: Airspeed sensor data
@@ -817,12 +820,14 @@ struct PACKED log_VER {
 // @Description: Specifically coded error messages
 // @Field: TimeUS: Time since system startup
 // @Field: Subsys: Subsystem in which the error occurred
+// @FieldValueEnum: Subsys: LogErrorSubsystem
 // @Field: ECode: Subsystem-specific error code
 
 // @LoggerMessage: EV
 // @Description: Specifically coded event messages
 // @Field: TimeUS: Time since system startup
 // @Field: Id: Event identifier
+// @FieldValueEnum: Id: LogEvent
 
 // @LoggerMessage: FMT
 // @Description: Message defining the format of messages in this file
@@ -844,6 +849,7 @@ struct PACKED log_VER {
 // @Description: Landing gear information
 // @Field: TimeUS: Time since system startup
 // @Field: LandingGear: Current landing gear state
+// @FieldValueEnum: LandingGear: AP_LandingGear::LG_LandingGear_State
 // @Field: WeightOnWheels: True if there is weight on wheels
 
 // @LoggerMessage: MAG
@@ -870,6 +876,7 @@ struct PACKED log_VER {
 // @Field: rxp: received packet count
 // @Field: rxdp: perceived number of packets we never received
 // @Field: flags: compact representation of some stage of the channel
+// @FieldBitmaskEnum: flags: GCS_MAVLINK::Flags
 // @Field: ss: stream slowdown is the number of ms being added to each message to fit within bandwidth
 // @Field: tf: times buffer was full when a message was going to be sent
 
@@ -898,6 +905,7 @@ struct PACKED log_VER {
 // @Field: Mode: vehicle-specific mode number
 // @Field: ModeNum: alias for Mode
 // @Field: Rsn: reason for entering this mode; enumeration value
+// @FieldValueEnum: Rsn: ModeReason
 
 // @LoggerMessage: MSG
 // @Description: Textual messages
@@ -943,12 +951,14 @@ struct PACKED log_VER {
 // @LoggerMessage: PM
 // @Description: autopilot system performance and general data dumping ground
 // @Field: TimeUS: Time since system startup
+// @Field: LR: Main loop rate
 // @Field: NLon: Number of long loops detected
-// @Field: NLoop: Number of measurement loops for this message
+// @Field: NL: Number of measurement loops for this message
 // @Field: MaxT: Maximum loop time
 // @Field: Mem: Free memory available
 // @Field: Load: System processor load
 // @Field: IntE: Internal error mask; which internal errors have been detected
+// @FieldBitmaskEnum: IntE: AP_InternalError::error_t
 // @Field: ErrL: Internal error line number; last line number on which a internal error was detected
 // @Field: ErrC: Internal error count; how many internal errors have been detected
 // @Field: SPIC: Number of SPI transactions processed
@@ -1093,14 +1103,16 @@ struct PACKED log_VER {
 // @Field: NumPts: number of points currently in use
 // @Field: MaxPts: maximum number of points that could be used
 // @Field: Action: most recent internal action taken by SRTL library
+// @FieldValueEnum: Action: AP_SmartRTL::SRTL_Actions
 // @Field: N: point associated with most recent action (North component)
 // @Field: E: point associated with most recent action (East component)
 // @Field: D: point associated with most recent action (Down component)
 
 // @LoggerMessage: TERR
-// @Description: Terrain database infomration
+// @Description: Terrain database information
 // @Field: TimeUS: Time since system startup
 // @Field: Status: Terrain database status
+// @FieldValueEnum: Status: AP_Terrain::TerrainStatus
 // @Field: Lat: Current vehicle latitude
 // @Field: Lng: Current vehicle longitude
 // @Field: Spacing: terrain Tile spacing
@@ -1195,7 +1207,7 @@ struct PACKED log_VER {
 // @Field: TimeUS: Time since system startup
 // @Field: Name: script name
 // @Field: Runtime: run time
-// @Field: Total_mem: total memory usage
+// @Field: Total_mem: total memory usage of all scripts
 // @Field: Run_mem: run memory usage
 
 // @LoggerMessage: MOTB
@@ -1258,7 +1270,7 @@ LOG_STRUCTURE_FROM_CAMERA \
     LOG_STRUCTURE_FROM_BEACON                                       \
     LOG_STRUCTURE_FROM_PROXIMITY                                    \
     { LOG_PERFORMANCE_MSG, sizeof(log_Performance),                     \
-      "PM",  "QHHIIHHIIIIII", "TimeUS,NLon,NLoop,MaxT,Mem,Load,ErrL,IntE,ErrC,SPIC,I2CC,I2CI,Ex", "s---b%------s", "F---0A------F" }, \
+      "PM",  "QHHHIIHHIIIIII", "TimeUS,LR,NLon,NL,MaxT,Mem,Load,ErrL,IntE,ErrC,SPIC,I2CC,I2CI,Ex", "sz---b%------s", "F----0A------F" }, \
     { LOG_SRTL_MSG, sizeof(log_SRTL), \
       "SRTL", "QBHHBfff", "TimeUS,Active,NumPts,MaxPts,Action,N,E,D", "s----mmm", "F----000" }, \
 LOG_STRUCTURE_FROM_AVOIDANCE \

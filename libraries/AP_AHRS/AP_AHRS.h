@@ -21,31 +21,16 @@
  *
  */
 
-#include <AP_HAL/AP_HAL_Boards.h>
+#include "AP_AHRS_config.h"
+
 #include <AP_HAL/Semaphores.h>
-
-#ifndef HAL_NAVEKF2_AVAILABLE
-// only default to EK2 enabled on boards with over 1M flash
-#define HAL_NAVEKF2_AVAILABLE (BOARD_FLASH_SIZE>1024)
-#endif
-
-#ifndef HAL_NAVEKF3_AVAILABLE
-#define HAL_NAVEKF3_AVAILABLE 1
-#endif
-
-#ifndef AP_AHRS_SIM_ENABLED
-#define AP_AHRS_SIM_ENABLED AP_SIM_ENABLED
-#endif
-
-#if AP_AHRS_SIM_ENABLED
-#include <SITL/SITL.h>
-#endif
 
 #include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_NavEKF3/AP_NavEKF3.h>
 #include <AP_NavEKF/AP_Nav_Common.h>              // definitions shared by inertial and ekf nav filters
 
 #include "AP_AHRS_DCM.h"
+#include "AP_AHRS_SIM.h"
 
 // forward declare view class
 class AP_AHRS_View;
@@ -123,7 +108,7 @@ public:
     // wind_estimation_enabled returns true if wind estimation is enabled
     bool get_wind_estimation_enabled() const { return wind_estimation_enabled; }
 
-    // return a wind estimation vector, in m/s
+    // return a wind estimation vector, in m/s; returns 0,0,0 on failure
     Vector3f wind_estimate() const;
 
     // instruct DCM to update its wind estimate:
@@ -236,7 +221,7 @@ public:
     bool get_vert_pos_rate(float &velocity) const;
 
     // write optical flow measurements to EKF
-    void writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &rawFlowRates, const Vector2f &rawGyroRates, const uint32_t msecFlowMeas, const Vector3f &posOffset);
+    void writeOptFlowMeas(const uint8_t rawFlowQuality, const Vector2f &rawFlowRates, const Vector2f &rawGyroRates, const uint32_t msecFlowMeas, const Vector3f &posOffset, const float heightOverride);
 
     // retrieve latest corrected optical flow samples (used for calibration)
     bool getOptFlowSample(uint32_t& timeStamp_ms, Vector2f& flowRate, Vector2f& bodyRate, Vector2f& losPred) const;
@@ -648,18 +633,18 @@ private:
     AP_Int8 _gps_minsats;
 
     enum class EKFType {
-        NONE = 0
+        NONE = 0,
 #if HAL_NAVEKF3_AVAILABLE
-        ,THREE = 3
+        THREE = 3,
 #endif
 #if HAL_NAVEKF2_AVAILABLE
-        ,TWO = 2
+        TWO = 2,
 #endif
 #if AP_AHRS_SIM_ENABLED
-        ,SIM = 10
+        SIM = 10,
 #endif
 #if HAL_EXTERNAL_AHRS_ENABLED
-        ,EXTERNAL = 11
+        EXTERNAL = 11,
 #endif
     };
     EKFType active_EKF_type(void) const;
@@ -689,6 +674,9 @@ private:
 
     // update roll_sensor, pitch_sensor and yaw_sensor
     void update_cd_values(void);
+
+    // return origin for a specified EKF type
+    bool get_origin(EKFType type, Location &ret) const;
 
     // helper trig variables
     float _cos_roll{1.0f};
@@ -753,10 +741,8 @@ private:
     EKFType last_active_ekf_type;
 
 #if AP_AHRS_SIM_ENABLED
-    SITL::SIM *_sitl;
-    uint32_t _last_body_odm_update_ms;
     void update_SITL(void);
-#endif    
+#endif
 
 #if HAL_EXTERNAL_AHRS_ENABLED
     void update_external(void);
@@ -798,6 +784,9 @@ private:
      */
     bool wind_estimation_enabled;
 
+    // return a wind estimation vector, in m/s
+    bool wind_estimate(Vector3f &wind) const WARN_IF_UNUSED;
+
     /*
      * fly_forward is set by the vehicles to indicate the vehicle
      * should generally be moving in the direction of its heading.
@@ -814,6 +803,14 @@ private:
      */
     AP_AHRS_DCM dcm{_kp_yaw, _kp, gps_gain, beta, _gps_use, _gps_minsats};
     struct AP_AHRS_Backend::Estimates dcm_estimates;
+#if AP_AHRS_SIM_ENABLED
+#if HAL_NAVEKF3_AVAILABLE
+    AP_AHRS_SIM sim{EKF3};
+#else
+    AP_AHRS_SIM sim;
+#endif
+    struct AP_AHRS_Backend::Estimates sim_estimates;
+#endif
 
     /*
      * copy results from a backend over AP_AHRS canonical results.

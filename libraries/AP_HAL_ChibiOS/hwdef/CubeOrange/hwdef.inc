@@ -330,8 +330,11 @@ ROMFS io_firmware.bin Tools/IO_Firmware/iofirmware_highpolh.bin
 DMA_NOSHARE SPI1* SPI4* USART6*
 
 # for users who have replaced their CubeSolo with a CubeOrange:
-define HAL_OREO_LED_ENABLED 1
+define AP_NOTIFY_OREOLED_ENABLED 1
 define HAL_SOLO_GIMBAL_ENABLED HAL_MOUNT_ENABLED
+
+undef AP_BATTMON_SMBUS_SOLO_ENABLED
+define AP_BATTMON_SMBUS_SOLO_ENABLED AP_BATTMON_SMBUS_ENABLE
 
 # Enable Sagetech MXS ADSB transponder
 define HAL_ADSB_SAGETECH_MXS_ENABLED HAL_ADSB_ENABLED

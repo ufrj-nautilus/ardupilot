@@ -1906,7 +1906,7 @@ void AP_OSD_Screen::draw_stat(uint8_t x, uint8_t y)
     backend->write(x+2, y, false, "%c%c%c", 0x4d,0x41,0x58);
     backend->write(x, y+1, false, "%c",SYMBOL(SYM_GSPD));
     backend->write(x+1, y+1, false, "%4d%c", (int)u_scale(SPEED, osd->_stats.max_speed_mps), u_icon(SPEED));
-    backend->write(x, y+2, false, "%5.1f%c", (double)osd->_stats.max_current_a, SYM_AMP);
+    backend->write(x, y+2, false, "%5.1f%c", (double)osd->_stats.max_current_a, SYMBOL(SYM_AMP));
     backend->write(x, y+3, false, "%5d%c", (int)u_scale(ALTITUDE, osd->_stats.max_alt_m), u_icon(ALTITUDE));
     backend->write(x, y+4, false, "%c", SYMBOL(SYM_HOME));
     draw_distance(x+1, y+4, osd->_stats.max_dist_m);
@@ -2113,6 +2113,7 @@ void AP_OSD_Screen::draw_current2(uint8_t x, uint8_t y)
 
 void AP_OSD_Screen::draw_vtx_power(uint8_t x, uint8_t y)
 {
+#if AP_VIDEOTX_ENABLED
     AP_VideoTX *vtx = AP_VideoTX::get_singleton();
     if (!vtx) {
         return;
@@ -2123,6 +2124,7 @@ void AP_OSD_Screen::draw_vtx_power(uint8_t x, uint8_t y)
         powr = vtx->get_power_mw();
     }
     backend->write(x, y, !vtx->is_configuration_finished(), "%4hu%c", powr, SYMBOL(SYM_MW));
+#endif  // AP_VIDEOTX_ENABLED
 }
 #if AP_TERRAIN_AVAILABLE
 void AP_OSD_Screen::draw_hgt_abvterr(uint8_t x, uint8_t y)

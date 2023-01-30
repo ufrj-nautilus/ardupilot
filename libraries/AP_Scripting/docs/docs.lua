@@ -75,6 +75,18 @@ local EFI_State_ud = {}
 function EFI_State() end
 
 -- set field
+---@param value number
+function EFI_State_ud:pt_compensation(value) end
+
+-- set field
+---@param value number
+function EFI_State_ud:throttle_out(value) end
+
+-- set field
+---@param value number
+function EFI_State_ud:ignition_voltage(value) end
+
+-- set field
 ---@param value Cylinder_Status_ud
 function EFI_State_ud:cylinder_status(value) end
 
@@ -174,20 +186,24 @@ function Cylinder_Status_ud:ignition_timing_deg(value) end
 ---@class efi
 efi = {}
 
--- EFI handle scripting update
----@param efi_state EFI_State_ud
-function efi:handle_scripting(efi_state) end
-
+-- desc
+---@param instance integer
+---@return AP_EFI_Backend_ud
+function efi:get_backend(instance) end
 
 -- CAN bus interaction
 ---@class CAN
 CAN = {}
 
--- get a CAN bus device handler
+-- get a CAN bus device handler first scripting driver
 ---@param buffer_len uint32_t_ud -- buffer length 1 to 25
 ---@return ScriptingCANBuffer_ud
 function CAN:get_device(buffer_len) end
 
+-- get a CAN bus device handler second scripting driver
+---@param buffer_len uint32_t_ud -- buffer length 1 to 25
+---@return ScriptingCANBuffer_ud
+function CAN:get_device2(buffer_len) end
 
 -- Auto generated binding
 
@@ -236,6 +252,9 @@ function CANFrame_ud:isRemoteTransmissionRequest() end
 ---@return boolean
 function CANFrame_ud:isExtended() end
 
+-- desc
+---@return integer
+function CANFrame_ud:id_signed() end
 
 -- desc
 ---@class motor_factor_table_ud
@@ -739,6 +758,14 @@ function Location_ud:lat() end
 ---@param value integer
 function Location_ud:lat(value) end
 
+-- get altitude frame
+---@return integer
+---| '0' # ABSOLUTE
+---| '1' # ABOVE_HOME
+---| '2' # ABOVE_ORIGIN
+---| '3' # ABOVE_TERRAIN
+function Location_ud:get_alt_frame() end
+
 -- desc
 ---@param desired_frame integer
 ---| '0' # ABSOLUTE
@@ -788,6 +815,14 @@ function Location_ud:offset(ofs_north, ofs_east) end
 ---@return number
 function Location_ud:get_distance(loc) end
 
+-- desc
+---@class AP_EFI_Backend_ud
+local AP_EFI_Backend_ud = {}
+
+-- desc
+---@param state EFI_State_ud
+---@return boolean
+function AP_EFI_Backend_ud:handle_scripting(state) end
 
 -- desc
 ---@class ScriptingCANBuffer_ud
@@ -965,10 +1000,10 @@ function mount:get_mode(instance) end
 
 -- desc
 ---@param instance integer
----@return number|nil
----@return number|nil
----@return number|nil
-function mount:get_attitude_euler(instance, roll_deg, pitch_deg, yaw_bf_deg) end
+---@return number|nil -- roll_deg
+---@return number|nil -- pitch_deg
+---@return number|nil -- yaw_bf_deg
+function mount:get_attitude_euler(instance) end
 
 -- desc
 ---@class motors
@@ -1269,6 +1304,11 @@ function mission:get_current_nav_index() end
 ---@return integer
 function mission:state() end
 
+-- desc
+---@param cmd integer
+---@return boolean
+function mission:cmd_has_location(cmd)end
+
 
 -- desc
 ---@class param
@@ -1421,6 +1461,11 @@ function rc:get_channel(chan_num) end
 ---@return boolean
 function rc:has_valid_input() end
 
+-- return cached level of aux function
+---@param aux_fn integer
+---@return integer|nil
+function rc:get_aux_cached(aux_fn) end
+
 -- desc
 ---@param aux_fun integer
 ---@param ch_flag integer
@@ -1529,6 +1574,10 @@ function serialLED:set_num_neopixel(chan, num_leds) end
 -- desc
 ---@class vehicle
 vehicle = {}
+
+-- desc
+---@return boolean
+function vehicle:has_ekf_failsafed() end
 
 -- desc
 ---@return number|nil
@@ -1704,6 +1753,13 @@ function vehicle:set_target_throttle_rate_rpy(param1, param2, param3, param4) en
 function vehicle:nav_script_time_done(param1) end
 
 -- desc
+---@return integer|nil
+---@return integer|nil
+---@return number|nil
+---@return number|nil
+function vehicle:nav_script_time() end
+
+-- desc
 ---@class onvif
 onvif = {}
 
@@ -1773,6 +1829,11 @@ function relay:toggle(instance) end
 ---@param instance integer
 ---@return boolean
 function relay:enabled(instance) end
+
+-- return state of a relay
+---@param instance integer
+---@return integer
+function relay:get(instance) end
 
 -- desc
 ---@param instance integer
@@ -2137,6 +2198,14 @@ function arming:disarm() end
 ahrs = {}
 
 -- desc
+---@return Quaternion_ud|nil
+function ahrs:get_quaternion() end
+
+-- desc
+---@return integer
+function ahrs:get_posvelyaw_source_set() end
+
+-- desc
 ---@return boolean
 function ahrs:initialised() end
 
@@ -2203,6 +2272,10 @@ function ahrs:healthy() end
 function ahrs:home_is_set() end
 
 -- desc
+---@return number
+function ahrs:get_relative_position_D_home() end
+
+-- desc
 ---@return Vector3f_ud|nil
 function ahrs:get_relative_position_NED_origin() end
 
@@ -2241,6 +2314,10 @@ function ahrs:get_home() end
 -- desc
 ---@return Location_ud|nil
 function ahrs:get_location() end
+
+-- same as `get_location` will be removed
+---@return Location_ud|nil
+function ahrs:get_position() end
 
 -- desc
 ---@return number
@@ -2289,3 +2366,19 @@ function follow:get_last_update_ms() end
 -- desc
 ---@return boolean
 function follow:have_target() end
+
+-- desc
+---@class scripting
+scripting = {}
+
+-- desc
+function scripting:restart_all() end
+
+-- desc
+--@param directoryname
+--@return list of filenames
+function dirlist(directoryname) end
+
+--desc
+--@param filename
+function remove(filename) end

@@ -114,6 +114,14 @@ class Board:
         else:
             cfg.msg("Enabled firmware ID checking", 'no', color='YELLOW')
 
+        if cfg.options.enable_gps_logging:
+            env.DEFINES.update(
+                AP_GPS_DEBUG_LOGGING_ENABLED=1,
+            )
+            cfg.msg("GPS Debug Logging", 'yes')
+        else:
+            cfg.msg("GPS Debug Logging", 'no', color='YELLOW')
+
         # allow enable of custom controller for any board
         # enabled on sitl by default
         if (cfg.options.enable_custom_controller or self.get_name() == "sitl") and not cfg.options.no_gcs:
@@ -241,6 +249,9 @@ class Board:
                 env.CXXFLAGS += [
                     '-Werror=implicit-fallthrough',
                 ]
+            env.CXXFLAGS += [
+                '-fcheck-new',
+            ]
 
         if cfg.env.DEBUG:
             env.CFLAGS += [
@@ -415,9 +426,6 @@ class Board:
                 UAVCAN_NULLPTR = 'nullptr'
             )
 
-            env.INCLUDES += [
-                cfg.srcnode.find_dir('modules/uavcan/libuavcan/include').abspath()
-            ]
 
         if cfg.options.build_dates:
             env.build_dates = True
@@ -652,6 +660,7 @@ class sitl(Board):
 
         env.AP_LIBRARIES += [
             'AP_HAL_SITL',
+            'AP_CSVReader',
         ]
 
         if not cfg.env.AP_PERIPH:
@@ -739,7 +748,6 @@ class sitl_periph_gps(sitl):
             CAN_APP_NODE_NAME = '"org.ardupilot.ap_periph_gps"',
             AP_AIRSPEED_ENABLED = 0,
             HAL_PERIPH_ENABLE_GPS = 1,
-            HAL_WITH_DSP = 1,
             HAL_CAN_DEFAULT_NODE_ID = 0,
             HAL_RAM_RESERVE_START = 0,
             APJ_BOARD_ID = 100,
@@ -841,6 +849,9 @@ class esp32(Board):
     def build(self, bld):
         super(esp32, self).build(bld)
         bld.load('esp32')
+
+    def get_name(self):
+        return self.__class__.__name__
 
 
 class chibios(Board):
