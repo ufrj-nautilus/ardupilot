@@ -28,6 +28,8 @@
   #define SCRIPTING_MAX_NUM_I2C_DEVICE 4
 #endif
 
+#define SCRIPTING_MAX_NUM_PWM_SOURCE 4
+
 class AP_Scripting
 {
 public:
@@ -89,6 +91,12 @@ public:
     };
     ObjectBuffer<struct scripting_mission_cmd> * mission_data;
 
+    // PWMSource storage
+    uint8_t num_pwm_source;
+    AP_HAL::PWMSource *_pwm_source[SCRIPTING_MAX_NUM_PWM_SOURCE];
+    int get_current_ref() { return current_ref; }
+    void set_current_ref(int ref) { current_ref = ref; }
+
 private:
 
     bool repl_start(void);
@@ -110,7 +118,7 @@ private:
     bool _stop; // true if scripts should be stopped
 
     static AP_Scripting *_singleton;
-
+    int current_ref;
 };
 
 namespace AP {

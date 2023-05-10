@@ -55,9 +55,13 @@
 #include <SITL/SITL.h>
 #include <AP_CustomRotations/AP_CustomRotations.h>
 #include <AP_AIS/AP_AIS.h>
+#include <AP_NMEA_Output/AP_NMEA_Output.h>
 #include <AC_Fence/AC_Fence.h>
 #include <AP_CheckFirmware/AP_CheckFirmware.h>
 #include <Filter/LowPassFilter.h>
+#include <AP_KDECAN/AP_KDECAN.h>
+
+class AP_DDS_Client;
 
 class AP_Vehicle : public AP_HAL::HAL::Callbacks {
 
@@ -95,6 +99,8 @@ public:
     ModeReason get_control_mode_reason() const {
         return control_mode_reason;
     }
+
+    virtual bool current_mode_requires_mission() const { return false; }
 
     // perform any notifications required to indicate a mode change
     // failed due to a bad mode number being supplied.  This can
@@ -158,6 +164,7 @@ public:
     // command throttle percentage and roll, pitch, yaw target
     // rates. For use with scripting controllers
     virtual void set_target_throttle_rate_rpy(float throttle_pct, float roll_rate_dps, float pitch_rate_dps, float yaw_rate_dps) {}
+    virtual void set_rudder_offset(float rudder_pct, bool run_yaw_rate_controller) {}
     virtual bool nav_scripting_enable(uint8_t mode) {return false;}
 
     // get target location (for use by scripting)
@@ -187,6 +194,9 @@ public:
     // returns true if the EKF failsafe has triggered
     virtual bool has_ekf_failsafed() const { return false; }
 
+    // allow for landing descent rate to be overridden by a script, may be -ve to climb
+    virtual bool set_land_descent_rate(float descent_rate) { return false; }
+    
     // control outputs enumeration
     enum class ControlOutput {
         Roll = 1,
@@ -257,7 +267,7 @@ protected:
     // board specific config
     AP_BoardConfig BoardConfig;
 
-#if HAL_MAX_CAN_PROTOCOL_DRIVERS
+#if HAL_CANMANAGER_ENABLED
     // board specific config for CAN bus
     AP_CANManager can_mgr;
 #endif
@@ -352,6 +362,14 @@ protected:
     AP_AIS ais;
 #endif
 
+#if HAL_NMEA_OUTPUT_ENABLED
+    AP_NMEA_Output nmea;
+#endif
+
+#if AP_KDECAN_ENABLED
+    AP_KDECAN kdecan;
+#endif
+
 #if AP_FENCE_ENABLED
     AC_Fence fence;
 #endif
@@ -382,6 +400,12 @@ protected:
 
 #if AP_SIM_ENABLED
     SITL::SIM sitl;
+#endif
+
+#if AP_DDS_ENABLED
+    // Declare the dds client for communication with ROS2 and DDS(common for all vehicles)
+    AP_DDS_Client *dds_client;
+    bool init_dds_client() WARN_IF_UNUSED;
 #endif
 
 private:

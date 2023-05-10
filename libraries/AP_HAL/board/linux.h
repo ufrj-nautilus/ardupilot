@@ -380,10 +380,13 @@
     #define HAL_LINUX_I2C_EXTERNAL_BUS_MASK 0xFFFF
 #endif
 
+// only include if compiling C++ code
+#ifdef __cplusplus
 #include <AP_HAL_Linux/Semaphores.h>
 #define HAL_Semaphore Linux::Semaphore
 #include <AP_HAL/EventHandle.h>
 #define HAL_EventHandle AP_HAL::EventHandle
+#endif
 
 #ifndef HAL_HAVE_HARDWARE_DOUBLE
 #define HAL_HAVE_HARDWARE_DOUBLE 1
@@ -395,4 +398,11 @@
 
 #ifndef HAL_GYROFFT_ENABLED
 #define HAL_GYROFFT_ENABLED 0
+#endif
+
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NONE
+// we can use virtual CAN on native builds
+#define HAL_LINUX_USE_VIRTUAL_CAN 1
+#else
+#define HAL_LINUX_USE_VIRTUAL_CAN 0
 #endif

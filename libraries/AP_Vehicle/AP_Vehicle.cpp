@@ -17,6 +17,7 @@
 #include <AP_HAL_ChibiOS/sdcard.h>
 #include <AP_HAL_ChibiOS/hwdef/common/stm32_util.h>
 #endif
+#include <AP_DDS/AP_DDS_Client.h>
 
 #define SCHED_TASK(func, rate_hz, max_time_micros, prio) SCHED_TASK_CLASS(AP_Vehicle, &vehicle, func, rate_hz, max_time_micros, prio)
 
@@ -118,6 +119,24 @@ const AP_Param::GroupInfo AP_Vehicle::var_info[] = {
     AP_SUBGROUPINFO(temperature_sensor, "TEMP", 16, AP_Vehicle, AP_TemperatureSensor),
 #endif
 
+#if HAL_NMEA_OUTPUT_ENABLED
+    // @Group: NMEA_
+    // @Path: ../AP_NMEA_Output/AP_NMEA_Output.cpp
+    AP_SUBGROUPINFO(nmea, "NMEA_", 17, AP_Vehicle, AP_NMEA_Output),
+#endif
+
+#if AP_DDS_ENABLED
+    // @Group: DDS
+    // @Path: ../AP_DDS/AP_DDS_Client.cpp
+    AP_SUBGROUPPTR(dds_client, "DDS", 18, AP_Vehicle, AP_DDS_Client),
+#endif
+
+#if AP_KDECAN_ENABLED
+    // @Group: KDE_
+    // @Path: ../AP_KDECAN/AP_KDECAN.cpp
+    AP_SUBGROUPINFO(kdecan, "KDE_",  19, AP_Vehicle, AP_KDECAN),
+#endif
+
     AP_GROUPEND
 };
 
@@ -211,7 +230,7 @@ void AP_Vehicle::setup()
     } 
 #if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
     else {
-        GCS_SEND_TEXT(MAV_SEVERITY_WARNING,"No airspeed sensor present or enabled");
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "No airspeed sensor");
     }
 #endif
 #endif  // AP_AIRSPEED_ENABLED
@@ -270,8 +289,16 @@ void AP_Vehicle::setup()
     temperature_sensor.init();
 #endif
 
+#if AP_KDECAN_ENABLED
+    kdecan.init();
+#endif
+
 #if AP_AIS_ENABLED
     ais.init();
+#endif
+
+#if HAL_NMEA_OUTPUT_ENABLED
+    nmea.init();
 #endif
 
 #if AP_FENCE_ENABLED
@@ -291,6 +318,12 @@ void AP_Vehicle::setup()
     AP_Param::invalidate_count();
 
     gcs().send_text(MAV_SEVERITY_INFO, "ArduPilot Ready");
+
+#if AP_DDS_ENABLED
+    if (!init_dds_client()) {
+        gcs().send_text(MAV_SEVERITY_ERROR, "DDS Client: Failed to Initialize");
+    }
+#endif
 }
 
 void AP_Vehicle::loop()
@@ -358,6 +391,9 @@ const AP_Scheduler::Task AP_Vehicle::scheduler_tasks[] = {
 #endif
 #if COMPASS_CAL_ENABLED
     SCHED_TASK_CLASS(Compass,      &vehicle.compass,        cal_update,     100, 200, 75),
+#endif
+#if HAL_NMEA_OUTPUT_ENABLED
+    SCHED_TASK_CLASS(AP_NMEA_Output, &vehicle.nmea,         update,                   50, 50, 180),
 #endif
 #if HAL_RUNCAM_ENABLED
     SCHED_TASK_CLASS(AP_RunCam,    &vehicle.runcam,         update,                   50, 50, 200),
@@ -803,6 +839,17 @@ void AP_Vehicle::check_motor_noise()
     }
 #endif
 }
+
+#if AP_DDS_ENABLED
+bool AP_Vehicle::init_dds_client()
+{
+    dds_client = new AP_DDS_Client();
+    if (dds_client == nullptr) {
+        return false;
+    }
+    return dds_client->start();
+}
+#endif // AP_DDS_ENABLED
 
 AP_Vehicle *AP_Vehicle::_singleton = nullptr;
 
