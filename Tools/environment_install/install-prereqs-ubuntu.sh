@@ -23,13 +23,13 @@ while getopts "yq" opt; do
             ;;
     esac
 done
-
-APT_GET="DEBIAN_FRONTEND=noninteractive apt-get"
+export DEBIAN_FRONTEND=noninteractive
+APT_GET="apt-get"
 if $ASSUME_YES; then
-    APT_GET="DEBIAN_FRONTEND=noninteractive $APT_GET --assume-yes"
+    APT_GET="$APT_GET --assume-yes"
 fi
 if $QUIET; then
-    APT_GET="DEBIAN_FRONTEND=noninteractive $APT_GET -qq"
+    APT_GET="$APT_GET -qq"
 fi
 
 # update apt package list
