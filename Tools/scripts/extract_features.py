@@ -36,6 +36,7 @@ class ExtractFeatures(object):
         # the substitutions will be upper-cased
         self.features = [
             ('AP_ADVANCEDFAILSAFE_ENABLED', 'AP::advancedfailsafe',),
+            ('AP_BOOTLOADER_FLASHING_ENABLED', 'ChibiOS::Util::flash_bootloader',),
             ('AP_AIRSPEED_ENABLED', 'AP_Airspeed::AP_Airspeed',),
             ('AP_AIRSPEED_{type}_ENABLED', r'AP_Airspeed_(?P<type>.*)::init',),
 
@@ -153,6 +154,7 @@ class ExtractFeatures(object):
             ('AP_LANDINGGEAR_ENABLED', r'AP_LandingGear::init\b',),
             ('AP_WINCH_ENABLED', 'AP_Winch::AP_Winch',),
 
+            ('AP_RCPROTOCOL_ENABLED', r'AP_RCProtocol::init\b',),
             ('AP_RCPROTOCOL_{type}_ENABLED', r'AP_RCProtocol_(?P<type>.*)::_process_byte\b',),
             ('AP_RCPROTOCOL_{type}_ENABLED', r'AP_RCProtocol_(?P<type>.*)::_process_pulse\b',),
 
@@ -187,6 +189,9 @@ class ExtractFeatures(object):
             ('AP_NOTIFY_PROFILED_ENABLED', r'ProfiLED::init_ports'),
             ('AP_NOTIFY_PROFILED_SPI_ENABLED', r'ProfiLED_SPI::rgb_set_id'),
             ('AP_NOTIFY_NEOPIXEL_ENABLED', r'NeoPixel::init_ports'),
+            ('AP_FILESYSTEM_FORMAT_ENABLED', r'AP_Filesystem::format'),
+
+            ('AP_INERTIALSENSOR_KILL_IMU_ENABLED', r'AP_InertialSensor::kill_imu'),
         ]
 
     def progress(self, msg):
@@ -199,6 +204,7 @@ class ExtractFeatures(object):
         # a list of problematic defines we don't have fixes for ATM:
         whitelist = frozenset([
             'HAL_PERIPH_SUPPORT_LONG_CAN_PRINTF',  # this define changes single method body, hard to detect?
+            'AP_PLANE_BLACKBOX_LOGGING', # no visible signature
         ])
         for option in build_options.BUILD_OPTIONS:
             if option.define in whitelist:

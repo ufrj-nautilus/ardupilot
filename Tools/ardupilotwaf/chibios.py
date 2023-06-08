@@ -457,7 +457,8 @@ def setup_canmgr_build(cfg):
             'DRONECAN_CXX_WRAPPERS=1',
             'USE_USER_HELPERS=1',
             'CANARD_ENABLE_DEADLINE=1',
-            'CANARD_MULTI_IFACE=1'
+            'CANARD_MULTI_IFACE=1',
+            'CANARD_ALLOCATE_SEM=1'
             ]
 
     if cfg.env.HAL_CANFD_SUPPORTED:
@@ -494,6 +495,8 @@ def load_env_vars(env):
         else:
             env[k] = v
             print("env set %s=%s" % (k, v))
+    if env.DEBUG or env.DEBUG_SYMBOLS:
+        env.CHIBIOS_BUILD_FLAGS += ' ENABLE_DEBUG_SYMBOLS=yes'
     if env.ENABLE_ASSERTS:
         env.CHIBIOS_BUILD_FLAGS += ' ENABLE_ASSERTS=yes'
     if env.ENABLE_MALLOC_GUARD:

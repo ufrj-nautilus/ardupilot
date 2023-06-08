@@ -45,7 +45,11 @@ extern const AP_HAL::HAL& hal;
 
 AP_Notify *AP_Notify::_singleton;
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#define CONFIG_NOTIFY_DEVICES_MAX 12
+#else
 #define CONFIG_NOTIFY_DEVICES_MAX 6
+#endif
 
 #if AP_NOTIFY_TOSHIBALED_ENABLED
 #define TOSHIBA_LED_I2C_BUS_INTERNAL    0
@@ -130,11 +134,7 @@ AP_Notify *AP_Notify::_singleton;
 #endif
 
 #ifndef NOTIFY_LED_OVERRIDE_DEFAULT
-#ifdef HAL_BUILD_AP_PERIPH
-    #define NOTIFY_LED_OVERRIDE_DEFAULT 1       // rgb_source_t::mavlink
-#else
-    #define NOTIFY_LED_OVERRIDE_DEFAULT 0       // rgb_source_t::standard
-#endif
+#define NOTIFY_LED_OVERRIDE_DEFAULT 0       // rgb_source_t::standard
 #endif
 
 #ifndef NOTIFY_LED_LEN_DEFAULT
@@ -355,7 +355,7 @@ void AP_Notify::add_backends(void)
                 break;
             case Notify_LED_DroneCAN:
 #if HAL_ENABLE_DRONECAN_DRIVERS
-                ADD_BACKEND(new DroneCAN_RGB_LED(0));
+                ADD_BACKEND(new DroneCAN_RGB_LED());
 #endif // HAL_ENABLE_DRONECAN_DRIVERS
                 break;
 

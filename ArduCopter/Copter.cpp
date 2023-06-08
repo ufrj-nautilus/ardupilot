@@ -189,7 +189,6 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
 #if LOGGING_ENABLED == ENABLED
     SCHED_TASK(loop_rate_logging, LOOP_RATE,    50,  75),
 #endif
-    SCHED_TASK_CLASS(AP_Notify,            &copter.notify,              update,          50,  90,  78),
     SCHED_TASK(one_hz_loop,            1,    100,  81),
     SCHED_TASK(ekf_check,             10,     75,  84),
     SCHED_TASK(check_vibration,       10,     50,  87),
@@ -442,6 +441,18 @@ void Copter::nav_script_time_done(uint16_t id)
 bool Copter::has_ekf_failsafed() const
 {
     return failsafe.ekf;
+}
+
+// returns true if vehicle is landing. Only used by Lua scripts
+bool Copter::is_landing() const
+{
+    return flightmode->is_landing();
+}
+
+// returns true if vehicle is taking off. Only used by Lua scripts
+bool Copter::is_taking_off() const
+{
+    return flightmode->is_taking_off();
 }
 
 #endif // AP_SCRIPTING_ENABLED

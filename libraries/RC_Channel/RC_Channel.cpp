@@ -149,7 +149,7 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Values{Copter, Rover, Plane}: 41:ArmDisarm (4.1 and lower)
     // @Values{Copter, Rover}: 42:SmartRTL
     // @Values{Copter, Plane}: 43:InvertedFlight
-    // @Values{Copter}: 44:Winch Enable
+    // @Values{Copter}: 44:Winch Enable, 45:Winch Control
     // @Values{Copter, Rover, Plane, Blimp}: 46:RC Override Enable
     // @Values{Copter}: 47:User Function 1, 48:User Function 2, 49:User Function 3
     // @Values{Rover}: 50:LearnCruise
@@ -679,9 +679,11 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
 #if AP_GRIPPER_ENABLED
     case AUX_FUNC::GRIPPER:
 #endif
+#if AP_INERTIALSENSOR_KILL_IMU_ENABLED
     case AUX_FUNC::KILL_IMU1:
     case AUX_FUNC::KILL_IMU2:
     case AUX_FUNC::KILL_IMU3:
+#endif
     case AUX_FUNC::MISSION_RESET:
     case AUX_FUNC::MOTOR_ESTOP:
     case AUX_FUNC::RC_OVERRIDE_ENABLE:
@@ -1440,7 +1442,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     }
 #endif
 
-#if !HAL_MINIMIZE_FEATURES
+#if AP_INERTIALSENSOR_KILL_IMU_ENABLED
     case AUX_FUNC::KILL_IMU1:
         AP::ins().kill_imu(0, ch_flag == AuxSwitchPos::HIGH);
         break;
@@ -1452,7 +1454,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::KILL_IMU3:
         AP::ins().kill_imu(2, ch_flag == AuxSwitchPos::HIGH);
         break;
-#endif // HAL_MINIMIZE_FEATURES
+#endif  // AP_INERTIALSENSOR_KILL_IMU_ENABLED
 
 #if AP_CAMERA_ENABLED
     case AUX_FUNC::CAMERA_TRIGGER:
