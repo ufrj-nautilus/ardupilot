@@ -83,6 +83,10 @@
 #include <AP_Landing/AP_Landing.h>
 #include <AP_LandingGear/AP_LandingGear.h>     // Landing Gear library
 #include <AP_Follow/AP_Follow.h>
+#include <AP_ExternalControl/AP_ExternalControl_config.h>
+#if AP_EXTERNAL_CONTROL_ENABLED
+#include <AP_ExternalControl/AP_ExternalControl.h>
+#endif
 
 #include "GCS_Mavlink.h"
 #include "GCS_Plane.h"
@@ -211,22 +215,15 @@ private:
     bool training_manual_roll;  // user has manual roll control
     bool training_manual_pitch; // user has manual pitch control
 
-    /*
-      keep steering and rudder control separated until we update servos,
-      to allow for a separate wheel servo from rudder servo
-    */
-    struct {
-        bool ground_steering; // are we doing ground steering?
-        int16_t steering; // value for nose/tail wheel
-        int16_t rudder;   // value for rudder
-    } steering_control;
-
     // should throttle be pass-thru in guided?
     bool guided_throttle_passthru;
 
     // are we doing calibration? This is used to allow heartbeat to
     // external failsafe boards during baro and airspeed calibration
     bool in_calibration;
+
+    // are we currently in long failsafe but have postponed it in MODE TAKEOFF until min level alt is reached
+    bool long_failsafe_pending;
 
     // GCS selection
     GCS_Plane _gcs; // avoid using this; use gcs()
@@ -387,6 +384,7 @@ private:
     // Ground speed
     // The amount current ground speed is below min ground speed.  Centimeters per second
     int32_t groundspeed_undershoot;
+    bool groundspeed_undershoot_is_valid;
 
     // Difference between current altitude and desired altitude.  Centimeters
     int32_t altitude_error_cm;
@@ -506,6 +504,9 @@ private:
 
         // how much correction have we added for terrain data
         float terrain_correction;
+
+        // last home altitude for detecting changes
+        int32_t last_home_alt_cm;
     } auto_state;
 
 #if AP_SCRIPTING_ENABLED
@@ -773,6 +774,11 @@ private:
 
     AP_Param param_loader {var_info};
 
+    // dummy implementation of external control
+#if AP_EXTERNAL_CONTROL_ENABLED
+    AP_ExternalControl external_control;
+#endif
+
     static const AP_Scheduler::Task scheduler_tasks[];
     static const AP_Param::Info var_info[];
 
@@ -867,9 +873,9 @@ private:
     float stabilize_pitch_get_pitch_out();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
-    void calc_nav_yaw_coordinated();
-    void calc_nav_yaw_course(void);
-    void calc_nav_yaw_ground(void);
+    int16_t calc_nav_yaw_coordinated();
+    int16_t calc_nav_yaw_course(void);
+    int16_t calc_nav_yaw_ground(void);
 
     // Log.cpp
     uint32_t last_log_fast_ms;
@@ -934,22 +940,14 @@ private:
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     float get_wp_radius() const;
 
-    void do_nav_delay(const AP_Mission::Mission_Command& cmd);
-    bool verify_nav_delay(const AP_Mission::Mission_Command& cmd);
-
     bool is_land_command(uint16_t cmd) const;
 
+    bool do_change_speed(uint8_t speedtype, float speed_target_ms, float rhtottle_pct);
     /*
       return true if in a specific AUTO mission command
     */
     bool in_auto_mission_id(uint16_t command) const;
-    
-    // Delay the next navigation command
-    struct {
-        uint32_t time_max_ms;
-        uint32_t time_start_ms;
-    } nav_delay;
-    
+
 #if AP_SCRIPTING_ENABLED
     // nav scripting support
     void do_nav_script_time(const AP_Mission::Mission_Command& cmd);
@@ -1035,6 +1033,7 @@ private:
     void loiter_angle_reset(void);
     void loiter_angle_update(void);
     void navigate();
+    void check_home_alt_change(void);
     void calc_airspeed_errors();
     float mode_auto_target_airspeed_cm();
     void calc_gndspeed_undershoot();
@@ -1073,6 +1072,7 @@ private:
     bool should_log(uint32_t mask);
     int8_t throttle_percentage(void);
     void notify_mode(const Mode& mode);
+    bool gcs_mode_enabled(const Mode::Number mode_num) const;
 
     // takeoff.cpp
     bool auto_takeoff_check(void);
@@ -1088,7 +1088,6 @@ private:
     // servos.cpp
     void set_servos_idle(void);
     void set_servos();
-    void set_servos_manual_passthrough(void);
     void set_servos_controlled(void);
     void set_servos_old_elevons(void);
     void set_servos_flaps(void);
@@ -1236,6 +1235,8 @@ private:
 
 public:
     void failsafe_check(void);
+    bool is_landing() const override;
+    bool is_taking_off() const override;
 #if AP_SCRIPTING_ENABLED
     bool set_target_location(const Location& target_loc) override;
     bool get_target_location(Location& target_loc) override;

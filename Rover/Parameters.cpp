@@ -221,9 +221,11 @@ const AP_Param::Info Rover::var_info[] = {
     // @Path: ../libraries/AP_Baro/AP_Baro.cpp
     GOBJECT(barometer, "BARO", AP_Baro),
 
+#if AP_RELAY_ENABLED
     // @Group: RELAY_
     // @Path: ../libraries/AP_Relay/AP_Relay.cpp
     GOBJECT(relay,                  "RELAY_", AP_Relay),
+#endif
 
     // @Group: RCMAP_
     // @Path: ../libraries/AP_RCMapper/AP_RCMapper.cpp
@@ -515,9 +517,11 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("CRASH_ANGLE", 22, ParametersG2, crash_angle, 0),
 
+#if AP_FOLLOW_ENABLED
     // @Group: FOLL
     // @Path: ../libraries/AP_Follow/AP_Follow.cpp
     AP_SUBGROUPINFO(follow, "FOLL", 23, ParametersG2, AP_Follow),
+#endif
 
     // @Param: FRAME_TYPE
     // @DisplayName: Frame Type
@@ -544,7 +548,7 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../libraries/AP_WheelEncoder/AP_WheelRateControl.cpp
     AP_SUBGROUPINFO(wheel_rate_control, "WRC", 27, ParametersG2, AP_WheelRateControl),
 
-#if AP_RALLY == ENABLED
+#if HAL_RALLY_ENABLED
     // @Group: RALLY_
     // @Path: AP_Rally.cpp,../libraries/AP_Rally/AP_Rally.cpp
     AP_SUBGROUPINFO(rally, "RALLY_", 28, ParametersG2, AP_Rally_Rover),
@@ -739,7 +743,7 @@ ParametersG2::ParametersG2(void)
 #if AP_BEACON_ENABLED
     beacon(),
 #endif
-    motors(rover.ServoRelayEvents, wheel_rate_control),
+    motors(wheel_rate_control),
     wheel_rate_control(wheel_encoder),
     attitude_control(),
     smart_rtl(),
@@ -750,7 +754,9 @@ ParametersG2::ParametersG2(void)
     proximity(),
 #endif
     avoid(),
+#if AP_FOLLOW_ENABLED
     follow(),
+#endif
     windvane(),
     pos_control(attitude_control),
     wp_nav(attitude_control, pos_control),

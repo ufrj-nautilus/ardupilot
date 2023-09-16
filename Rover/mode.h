@@ -451,6 +451,14 @@ protected:
     // if there is no current position estimate target_yaw_rad is set to vehicle yaw
     void init_target_yaw_rad();
 
+    // limit config speed so that lateral acceleration is within limits
+    // outputs warning to user if speed is reduced
+    void check_config_speed();
+
+    // ensure config radius is no smaller then vehicle's TURN_RADIUS
+    // radius is increased if necessary and warning is output to the user
+    void check_config_radius();
+
     // enum for Direction parameter
     enum class Direction {
         CW = 0,
@@ -781,6 +789,7 @@ protected:
     bool _enter() override { return false; };
 };
 
+#if MODE_FOLLOW_ENABLED == ENABLED
 class ModeFollow : public Mode
 {
 public:
@@ -815,6 +824,7 @@ protected:
 
     float _desired_speed;       // desired speed in m/s
 };
+#endif
 
 class ModeSimple : public Mode
 {

@@ -116,7 +116,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_ARSPD
     // @DisplayName: Airspeed during landing approach (m/s)
-    // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach.  Max airspeed allowed is Trim Airspeed or ARSPD_FBW_MAX as defined by LAND_OPTIONS bitmask.  Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead).  If negative then this value is not used during landing.
+    // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach.  Max airspeed allowed is Trim Airspeed or ARSPD_FBW_MAX as defined by LAND_OPTIONS bitmask.  Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead).  If negative then this value is halfway between ARSPD_FBW_MIN and TRIM_CRUISE_CM speed for fixed wing autolandings.
     // @Range: -1 127
     // @Increment: 1
     // @User: Standard
@@ -1155,8 +1155,18 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
                                     float hgt_afe,
                                     float load_factor)
 {
-    // Calculate time in seconds since last update
     uint64_t now = AP_HAL::micros64();
+    // check how long since we last did the 50Hz update; do nothing in
+    // this loop if that hasn't run for some signficant period of
+    // time.  Notably, it may never have run, leaving _TAS_state as
+    // zero and subsequently division-by-zero errors.
+    const float _DT_for_update_50hz = (now - _update_50hz_last_usec) * 1.0e-6f;
+    if (_update_50hz_last_usec == 0 || _DT_for_update_50hz > 1.0) {
+        // more than 1 second since it was run, don't do anything yet:
+        return;
+    }
+
+    // Calculate time in seconds since last update
     _DT = (now - _update_pitch_throttle_last_usec) * 1.0e-6f;
     _DT = MAX(_DT, 0.001f);
     _update_pitch_throttle_last_usec = now;
